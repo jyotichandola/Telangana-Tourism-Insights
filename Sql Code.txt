@@ -1,0 +1,167 @@
+create table domestic_visitors(
+select district, date, month, year, visitors from domestic_visitors_2016
+union
+select district, date, month, year, visitors from domestic_visitors_2017
+union
+select district, date, month, year, visitors from domestic_visitors_2018
+union
+select district, date, month, year, visitors from domestic_visitors_2019);
+
+create table foreign_visitors(
+select district, date, month, year, visitors from foreign_visitors_2016
+union
+select district, date, month, year, visitors from foreign_visitors_2017
+union
+select district, date, month, year, visitors from foreign_visitors_2018
+union
+select district, date, month, year, visitors from foreign_visitors_2019);
+
+
+
+
+https://drive.google.com/uc?id=1br7w7Q1-r7oUZD-ptkPvMuQz3HliyRzS&export=download
+
+
+1. Top 10 district of highest Domestic Visitors(2016-2019)?
+
+Select district,sum(visitors) as total_visitors  
+from domestic_visitors
+group by district order by visitors desc limit 10;
+
+
+
+2. Top 3 district based on CAGR of visitors between(2016-2019)?
+
+-- For Domestic Visitors
+with cte as(
+Select district,
+sum(case when year = 2016 Then visitors else 0 End) as Visitors_in_2016,   #all the visitors from 2016 district wise
+sum(case when year = 2019 Then visitors else 0 End) as Visitors_in_2019	 #all the visitors from 2019 district wise
+from domestic_visitors
+group by district
+)
+select district,Visitors_in_2016,Visitors_in_2019, round((power((Visitors_in_2019/Visitors_in_2016),1/3)-1)*100,2) as CAGR
+from cte
+order by CAGR desc limit 3;
+
+
+-- For Foreign Visitors
+with cte as(
+Select district,
+sum(case when year = 2016 Then visitors else 0 End) as Visitors_in_2016,   #all the visitors from 2016 district wise
+sum(case when year = 2019 Then visitors else 0 End) as Visitors_in_2019	 #all the visitors from 2019 district wise
+from foreign_visitors
+group by district
+)
+select district,Visitors_in_2016,Visitors_in_2019, round((power((Visitors_in_2019/Visitors_in_2016),1/3)-1)*100,2) as CAGR
+from cte
+order by CAGR desc limit 3;
+
+
+3. Bottom 3 districts based on compounded annual growth rate (CAGR) of visitors between (2016-2019)?
+
+--Domestic Visitors
+
+with cte as(
+Select district,
+sum(case when year = 2016 Then visitors else 0 End) as Visitors_in_2016,   
+sum(case when year = 2019 Then visitors else 0 End) as Visitors_in_2019	 
+from domestic_visitors
+group by district),
+cte2 as(select district,Visitors_in_2016,Visitors_in_2019, round((power((Visitors_in_2019/Visitors_in_2016),1/3)-1)*100,2) as CAGR
+from cte) 
+select * from cte2
+where CAGR is not null
+order by CAGR limit 3;
+
+
+
+
+-- For Foreign Visitors
+
+with cte as(
+Select district,
+sum(case when year = 2016 Then visitors else 0 End) as Visitors_in_2016,   
+sum(case when year = 2019 Then visitors else 0 End) as Visitors_in_2019	 
+from foreign_visitors
+group by district),
+cte2 as(select district,Visitors_in_2016,Visitors_in_2019, round((power((Visitors_in_2019/Visitors_in_2016),1/3)-1)*100,2) as CAGR
+from cte) 
+select * from cte2
+where CAGR is not null
+order by CAGR limit 3;
+
+
+
+4. Peak and Low season months for Hyderabad based on the data from 2016 to 2019?
+
+--Domestic visitors
+
+select month as peak_season, sum(visitors) as visitors
+from domestic_visitors
+where district ="Hyderabad"
+group by month
+order by visitors desc ;
+
+
+--Foreign visitors
+
+select month as peak_season, sum(visitors) as visitors
+from foreign_visitors
+where district ="Hyderabad"
+group by month
+order by visitors desc ;
+
+
+5. Top & Bottom 3 districts with high domestic to foreign tourist ratio?
+---Top
+with cte as (
+select D.district ,sum(D.visitors) as Domestic_visitor,sum(F.visitors) as Foreign_visitor,round(sum(D.visitors)/sum(F.visitors)) as DtoF_ratio
+from domestic_visitors D
+join foreign_visitors F
+on D.district =F.district 
+group by D.district
+)
+select * from cte 
+where DtoF_ratio is not null
+order by DtoF_ratio desc limit 3;
+
+
+
+
+--Bottom 3
+with cte as (
+select D.district ,sum(D.visitors) as Domestic_visitor,sum(F.visitors) as Foreign_visitor,round(sum(D.visitors)/sum(F.visitors)) as DtoF_ratio
+from domestic_visitors D
+join foreign_visitors F
+on D.district =F.district 
+group by D.district
+)
+select * from cte 
+where DtoF_ratio is not null
+order by DtoF_ratio limit 3;
+
+
+
+6. List the top & bottom 5 districts based on 'population to tourist footfall ratio’ ratio in 2019?
+
+--Top 5
+
+ select year,D.district as District,Population,sum(visitors) as visitors,(sum(visitors)/Population) as footfall_ratio
+ from population_data P
+ join domestic_visitors D
+ on P.District =D.district
+ where year =2019 
+ group by D.district,Population,year
+ order by footfall_ratio desc limit 5;
+
+
+--Bottom 5
+
+ select year,D.district as District,Population,sum(visitors) as visitors,(sum(visitors)/Population) as footfall_ratio
+ from population_data P
+ join domestic_visitors D
+ on P.District =D.district
+ where year =2019 
+ group by D.district,Population,year
+ order by footfall_ratio  limit 5;
